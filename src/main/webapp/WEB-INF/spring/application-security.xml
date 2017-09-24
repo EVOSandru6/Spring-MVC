@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/security 
+	http://www.springframework.org/schema/security/spring-security-3.2.xsd
+		
+	http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+
+	<http auto-config="true">
+		<!--ИСПОЛЬЗУЕТСЯ ФУНКЦИЯ "ЗАПОМНИ МЕНЯ", И БЕРЁТ ИНФОРМАЦИЮ ИЗ БД, КОНФИГУРАЦИЯ КОТОРОЙ УКАЗАНА В БИНЕ dataSource-->
+		<remember-me data-source-ref="dataSource" />
+
+		<!--УКАЗАНИЕ URL ПАТТЕРНА И НОМЕР ПОРТА, ПО КОТОРОМУ БУДЕТ ПРОХОДИТЬ ЗАЩИЩЁННОЕ SSL СОЕДИНЕНИЕ		-->
+		<!--<intercept-url pattern="/**" requires-channel="https" />-->
+		<!--<port-mappings>-->
+			<!--<port-mapping http="8080" https="8181" />-->
+		<!--</port-mappings>-->
+
+		<!--УКАЗАНИЕ СТРАНИЦЫ, НА КОТОРУЮ БУДЕТ РЕДИРЕКТ, В СЛУЧАЕ ЕСЛИ ДЛЯ РОЛИ ПОЛЬЗОВАТЕЛЯ, НЕТ ДОСТУПА К ЗАПРАШИВАЕМОМУ РЕСУРСУ-->
+		<access-denied-handler error-page="/security-page" />
+
+		<!--УКАЗАНИЕ URL ПАТТЕРНОВ РЕСУРСОВ И РОЛЕЙ, КОТОРЫЕ БУДУТ ИМЕТЬ К НИМ ДОСТУП -->
+		<intercept-url pattern="/user" access="ROLE_ADMIN, ROLE_USER" />
+		<intercept-url pattern="/admin" access="ROLE_ADMIN" />
+
+
+		<!--УКАЗАНИЕ ПАРАМЕТРОВ ДЛЯ ФОРМЫ АВТОРИЗАЦИИ-->
+		<!--login-page - СТРАНИЦА С ФОРМОЙ АВТОРИЗАЦИИ-->
+		<!--default-target-url - СТРАНИЦА НА КОТОРУЮ БУДЕТ АВТОМАТИЧЕСКИ ПЕРЕБРАСЫВАТЬ ПОЛЬЗОВАТЕЛЯ ЕСЛИ ОН ИЗНАЧАЛЬНО НЕ ОБРАЩАЛСЯ К КАКОМУ ЛИБО РЕСУРСУ-->
+		<!--always-use-default-target - ЕСЛИ ЗНАЧЕНИЕ TRUE, ПОЛЬЗОВАТЕЛЯ ПОСЛЕ АВТОРИЗАЦИИ, ВСЕГДА БУДЕТ ПЕРЕБРАСЫВАТЬ НА СТРАНИЦУ УКАЗАННУЮ В ПАРАМЕТРЕ default-target-url-->
+		<!--authentication-failure-url - СТРАНИЦА, НА КОТОРУЮ БУДЕТ ПЕРЕБРОШЕН ПОЛЬЗОВАТЕЛЬ В СЛУЧАЕ ОШИБКИ ПРИ УКАЗНИИ ЛОГИНА ИЛИ ПАРОЛЯ-->
+		<!--username-parameter password-parameter - НАЗВАНИЕ ПОЛЕЙ В ФОРМЕ-->
+		<form-login login-page='/login'
+					default-target-url="/index"
+					always-use-default-target="false"
+					authentication-failure-url="/login-error"
+					username-parameter="user_login"
+					password-parameter="password_login" />
+
+		<!--СТРАНИЦА НА КОТОРУЮ БУДЕТ ПЕРЕБРОШЕН ПОЛЬЗОВАТЕЛЬ КОГДА БУДЕТ РАЗЛОГИНЕН-->
+		<logout logout-success-url="/login" />
+	</http>
+
+	<!--УКАЗАНИЕ ТОГО, ЧТО ДАННЫЕ О ПОЛЬЗОВАТЕЛЯХ БУДУТ БРАТЬСЯ ИЗ БД(УКАЗАНИЕ В PROPERTY БИНА - dataSource), И БУДУТ ИСПОЛЬЗОВАТЬСЯ ГРУППЫ РОЛЕЙ(enableGroups = "true")-->
+	<beans:bean id="jdbcGroupsImpl"
+		class="org.springframework.security.core.userdetails.jdbc.JdbcDaoImpl">
+		<beans:property name="enableGroups" value="true" />
+		<beans:property name="enableAuthorities" value="false" />
+		<beans:property name="dataSource" ref="dataSource" />
+	</beans:bean>
+
+
+
+	<!--УКАЗАНИЕ ТОГО, ЧТО ПРИ АВТОРИЗАЦИИ, ПАРОЛИ БУДЕТ ХЕШИРОВАТЬ БИН bcrypt-->
+	<authentication-manager>
+		<authentication-provider user-service-ref="jdbcGroupsImpl">
+			<password-encoder ref="bcrypt" />
+		</authentication-provider>
+	</authentication-manager>
+
+	<!--БИН, КОТОРЫЙ БУДЕТ ХЕШИРОВАТЬ ПАРОЛИ-->
+	<beans:bean id="bcrypt"
+		class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder">
+		<beans:constructor-arg name="strength" value="11" />
+	</beans:bean>
+
+
+
+
+
+
+</beans:beans>
